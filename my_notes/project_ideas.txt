@@ -1,0 +1,12 @@
+Vedic Assistant Project Ideas
+
+- Phase 1: Core command parsing (Done)
+- Phase 2: Add GUI and advanced NLU (Done)
+- Phase 3: Internet search and personal knowledge base (In Progress)
+
+Meeting Notes (2025-08-28):
+- Discussed the plan for Vedic 3.2.
+- Key feature is searching local notes.
+- The implementation will use the grep tool for keyword matching.
+- Future improvement: use a vector database for semantic search.
+- Another important feature is the ability to handle more complex automation workflows.

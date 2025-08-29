@@ -1,0 +1,20 @@
+[
+  {
+    "phrase": "run diagnostics",
+    "action": "run_diagnostics",
+    "application": "system",
+    "description": "A custom command to run system diagnostics."
+  },
+  {
+    "phrase": "check for updates",
+    "action": "check_for_updates",
+    "application": "system",
+    "description": "A custom command to check for software updates."
+  },
+  {
+    "phrase": "optimize performance",
+    "action": "optimize_performance",
+    "application": "system",
+    "description": "A custom command to run performance optimization tasks."
+  }
+]
