@@ -28,6 +28,17 @@ class Assistant:
             run_in_bash_session_tool=self.bash_tool_instance
         )
         self.tool_map = {tool.name: tool for tool in self.tools}
+        self.custom_commands = self.load_custom_commands()
+
+    def load_custom_commands(self, filepath="commands.json"):
+        """Loads or reloads custom command definitions from a JSON file."""
+        try:
+            with open(filepath, 'r') as f:
+                self.logger(f"[Assistant] Loading custom commands from {filepath}")
+                return json.load(f)
+        except FileNotFoundError:
+            self.logger(f"WARNING: Custom commands file not found at {filepath}.")
+            return []
 
     def _llm_choose_tool(self, command: str) -> str:
         """ **LLM Simulation** """
@@ -37,7 +48,33 @@ class Assistant:
         lower_command = command.lower()
         response_json = {"tool_name": None, "parameters": None}
 
-        # New rules for file and music search
+        # Priority 1: Check for high-intent keywords like 'schedule' or 'remind'
+        if "remind me to" in lower_command or "schedule" in lower_command:
+            import re
+            match = re.search(r'(remind me to|schedule a task to) (.*) (in .*|at .*)', lower_command)
+            if match:
+                response_json = {
+                    "tool_name": "schedule_task",
+                    "parameters": {
+                        "task_description": match.group(2),
+                        "time_string": match.group(3)
+                    }
+                }
+                self.logger(f"LLM Response (JSON): {json.dumps(response_json)}")
+                return json.dumps(response_json)
+
+        # Priority 2: Check for user-defined custom commands
+        for cmd_def in self.custom_commands:
+            if cmd_def['phrase'] in lower_command:
+                self.logger(f"LLM matched custom command phrase: '{cmd_def['phrase']}'")
+                response_json = {
+                    "tool_name": cmd_def['action'],
+                    "parameters": None
+                }
+                self.logger(f"LLM Response (JSON): {json.dumps(response_json)}")
+                return json.dumps(response_json)
+
+        # Priority 3: General purpose rules
         if "list" in lower_command and "music" in lower_command:
             response_json = {"tool_name": "list_music_files", "parameters": None}
         elif "search" in lower_command and "for" in lower_command:
@@ -57,6 +94,18 @@ class Assistant:
                 "tool_name": "answer_question_from_web",
                 "parameters": {"query": command}
             }
+        # Rule for scheduling tasks
+        elif "remind me to" in lower_command or "schedule" in lower_command:
+            import re
+            match = re.search(r'(remind me to|schedule a task to) (.*) (in .*|at .*)', lower_command)
+            if match:
+                response_json = {
+                    "tool_name": "schedule_task",
+                    "parameters": {
+                        "task_description": match.group(2),
+                        "time_string": match.group(3)
+                    }
+                }
 
         self.logger(f"LLM Response (JSON): {json.dumps(response_json)}")
         self.logger("--- [End LLM Simulation] ---")

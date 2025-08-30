@@ -1,6 +1,12 @@
 import time
+import os
+import json
 from assistant import Assistant
 import database
+from datetime import datetime, timedelta
+import re
+
+COMMAND_QUEUE_FILE = "command_queue.txt"
 
 class VedicService:
     """
@@ -9,62 +15,80 @@ class VedicService:
     """
     def __init__(self):
         print("Initializing Vedic Service...")
-        # In a real service, you would pass the real tools here.
         self.assistant = Assistant()
-        # Ensure the database is ready.
         database.init_db()
         self.is_running = False
+        if os.path.exists(COMMAND_QUEUE_FILE):
+            os.remove(COMMAND_QUEUE_FILE)
+
+    def check_for_commands(self):
+        """Checks the command queue file for a new command from a client."""
+        if os.path.exists(COMMAND_QUEUE_FILE):
+            with open(COMMAND_QUEUE_FILE, 'r') as f:
+                command = f.read().strip()
+            os.remove(COMMAND_QUEUE_FILE)
+            if command:
+                self.assistant.logger(f"[Service] Received command '{command}' from queue.")
+                self.assistant.execute_command(command)
+
+    def _is_task_due(self, task):
+        """
+        Parses a task's time_string and timestamp to see if it's due.
+        This is a simple simulation and only understands "in X minutes".
+        """
+        time_string = task['details_json'].get('time_string', '').lower()
+
+        # Simple case: "in X minutes"
+        match = re.search(r'in (\d+) minute', time_string)
+        if match:
+            minutes_to_wait = int(match.group(1))
+            scheduled_time = datetime.fromisoformat(task['timestamp'])
+            due_time = scheduled_time + timedelta(minutes=minutes_to_wait)
+            return datetime.now() >= due_time
+
+        # Default case for this simulation: assume any other time string means "now"
+        return True
 
     def perform_proactive_check(self):
         """
-        This method is called periodically by the service loop.
-        It's the entry point for all proactive (non-command-driven) behaviors.
+        Checks the database for pending scheduled tasks and executes them if they are due.
         """
-        # In a real application, this could trigger multiple checks.
-        # For example, check the calendar, check system health, check for news, etc.
+        pending_tasks = database.get_pending_scheduled_tasks(logger=self.assistant.logger)
 
-        # Example: A simple proactive check.
-        # Let's imagine a tool that checks the time.
-        from datetime import datetime
-        now = datetime.now()
-        if now.minute == 0: # Run on the hour
-            self.assistant.logger("--- [Proactive Check] ---")
-            self.assistant.logger(f"It's {now.hour}:00. Time for an hourly check.")
-            # Here, the assistant could use a tool to check for reminders in its memory.
-            # e.g., self.assistant.execute_command("recall reminders for this hour")
+        for task in pending_tasks:
+            if self._is_task_due(task):
+                self.assistant.logger(f"--- [Proactive Task] ---")
+                self.assistant.logger(f"Executing scheduled task #{task['id']}: {task['details_json']['task']}")
+
+                # The assistant gives itself the command to execute the task.
+                self.assistant.execute_command(task['details_json']['task'])
+
+                # Mark the task as complete so it doesn't run again.
+                database.update_task_status(task['id'], 'complete', logger=self.assistant.logger)
 
     def start(self):
         """Starts the main service loop."""
         self.is_running = True
-        print("Vedic Service started. Running in a loop (press Ctrl+C to stop).")
+        self.assistant.logger("Vedic Service started. Running in a loop (press Ctrl+C to stop).")
 
         while self.is_running:
             try:
-                # 1. Perform proactive checks.
+                self.check_for_commands()
                 self.perform_proactive_check()
-
-                # 2. Listen for incoming commands.
-                # In a real service, this would not be a sleep. It would be a non-blocking
-                # listener, e.g., a socket server, a message queue consumer (like RabbitMQ),
-                # or a file-based queue that the GUI writes to.
-                # For this simulation, we just sleep to represent the service being idle
-                # but ready to be interrupted by a command.
-
-                time.sleep(60) # Check once per minute
-
+                time.sleep(5)
             except KeyboardInterrupt:
-                print("\nShutdown signal received.")
                 self.stop()
             except Exception as e:
-                print(f"An error occurred in the service loop: {e}")
-                time.sleep(60) # Wait before retrying after an error
+                self.assistant.logger(f"An error occurred in the service loop: {e}")
+                time.sleep(20)
 
     def stop(self):
         """Stops the service loop."""
-        print("Vedic Service stopping.")
+        self.assistant.logger("Vedic Service stopping.")
+        if os.path.exists(COMMAND_QUEUE_FILE):
+            os.remove(COMMAND_QUEUE_FILE)
         self.is_running = False
 
 if __name__ == "__main__":
     service = VedicService()
-    # In a real deployment, this would be managed by a service manager like systemd.
     service.start()

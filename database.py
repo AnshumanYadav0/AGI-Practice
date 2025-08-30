@@ -111,3 +111,68 @@ if __name__ == "__main__":
     if event:
         print("Retrieved Event:", event)
     print("Database test complete.")
+
+
+def get_pending_scheduled_tasks(logger=print):
+    """
+    Retrieves all scheduled tasks that are currently pending.
+    """
+    try:
+        con = sqlite3.connect(DB_FILE)
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+
+        cur.execute(
+            "SELECT * FROM events WHERE event_type = 'scheduled_task' AND json_extract(details_json, '$.status') = 'pending'"
+        )
+
+        rows = cur.fetchall()
+        con.close()
+
+        if rows:
+            logger(f"[Database] Found {len(rows)} pending scheduled tasks.")
+            # Convert row objects to standard dictionaries
+            tasks = []
+            for row in rows:
+                task = dict(row)
+                task['details_json'] = json.loads(task['details_json'])
+                tasks.append(task)
+            return tasks
+        else:
+            return []
+
+    except Exception as e:
+        logger(f"[Database] Error getting pending tasks: {e}")
+        return []
+
+def update_task_status(task_id: int, new_status: str, logger=print):
+    """
+    Updates the status of a specific scheduled task.
+    """
+    try:
+        con = sqlite3.connect(DB_FILE)
+        cur = con.cursor()
+
+        # First, get the current details
+        cur.execute("SELECT details_json FROM events WHERE id = ?", (task_id,))
+        row = cur.fetchone()
+        if not row:
+            logger(f"[Database] Error: Could not find task with id {task_id} to update.")
+            return False
+
+        details = json.loads(row[0])
+        details['status'] = new_status # Update the status
+        details_str = json.dumps(details)
+
+        cur.execute(
+            "UPDATE events SET details_json = ? WHERE id = ?",
+            (details_str, task_id)
+        )
+
+        con.commit()
+        con.close()
+        logger(f"[Database] Updated task {task_id} status to '{new_status}'.")
+        return True
+    except Exception as e:
+        logger(f"[Database] Error updating task status: {e}")
+        return False

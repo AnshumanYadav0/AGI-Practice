@@ -13,6 +13,7 @@ from .shell_tools import RunBashCommandTool, TroubleshootDevIssueTool
 from .memory_tools import LogEventTool, RecallEventTool
 from .windows_tools import OpenWindowsAppTool
 from .vision_tools import ScreenReaderTool, WorkflowLearningTool
+from .scheduling_tools import ScheduleTaskTool
 
 def get_all_tools(
     logger,
@@ -62,6 +63,8 @@ def get_all_tools(
         # Vision & Learning Tools
         ScreenReaderTool(logger=logger),
         WorkflowLearningTool(logger=logger),
+        # Scheduling Tools
+        ScheduleTaskTool(logger=logger),
     ]
 
 def get_formatted_tool_descriptions(tool_list):
