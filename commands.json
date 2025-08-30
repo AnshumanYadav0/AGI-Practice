@@ -16,5 +16,12 @@
     "action": "optimize_performance",
     "application": "system",
     "description": "A custom command to run performance optimization tasks."
+  },
+  {
+    "phrase": "start my coding workflow",
+    "action": "run_learned_script",
+    "application": "system",
+    "description": "A learned workflow to open the coding project.",
+    "script_path": "learned_scripts/coding_workflow.sh"
   }
 ]

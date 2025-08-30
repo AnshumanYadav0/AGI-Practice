@@ -4,13 +4,15 @@
 
 from .autocad_tools import CreateRectangleTool, AddCircleTool
 from .browser_tools import OpenWebsiteTool
-from .notes_tools import SearchNotesTool
+from .file_search_tools import SearchFilesTool, ListMusicFilesTool
 from .qgis_tools import CreateShapefileTool
 from .research_tools import AnswerQuestionFromWebTool
 from .revit_tools import CreateWallTool
 from .system_tools import RunDiagnosticsTool, CheckForUpdatesTool, OptimizePerformanceTool
 from .shell_tools import RunBashCommandTool, TroubleshootDevIssueTool
 from .memory_tools import LogEventTool, RecallEventTool
+from .windows_tools import OpenWindowsAppTool
+from .vision_tools import ScreenReaderTool, WorkflowLearningTool
 
 def get_all_tools(
     logger,
@@ -28,26 +30,38 @@ def get_all_tools(
 
     # High-level tools that might use other tools
     fix_it_tool = TroubleshootDevIssueTool(logger=logger, bash_tool=bash_tool)
+    open_app_tool = OpenWindowsAppTool(logger=logger, bash_tool=bash_tool)
 
     return [
+        # CAD Tools
         CreateRectangleTool(logger=logger),
         AddCircleTool(logger=logger),
-        OpenWebsiteTool(logger=logger),
-        SearchNotesTool(logger=logger, grep_tool=grep_tool),
+        CreateWallTool(logger=logger),
+        # GIS Tools
         CreateShapefileTool(logger=logger),
+        # Browser Tools
+        OpenWebsiteTool(logger=logger),
+        # Research & Knowledge Tools
         AnswerQuestionFromWebTool(
             logger=logger,
             google_search_tool=google_search_tool,
             view_text_website_tool=view_text_website_tool
         ),
-        CreateWallTool(logger=logger),
+        SearchFilesTool(logger=logger, grep_tool=grep_tool),
+        ListMusicFilesTool(logger=logger, bash_tool=bash_tool),
+        # Memory Tools
+        LogEventTool(logger=logger),
+        RecallEventTool(logger=logger),
+        # System & OS Tools
         RunDiagnosticsTool(logger=logger),
         CheckForUpdatesTool(logger=logger),
         OptimizePerformanceTool(logger=logger),
         bash_tool,
         fix_it_tool,
-        LogEventTool(logger=logger),
-        RecallEventTool(logger=logger),
+        open_app_tool,
+        # Vision & Learning Tools
+        ScreenReaderTool(logger=logger),
+        WorkflowLearningTool(logger=logger),
     ]
 
 def get_formatted_tool_descriptions(tool_list):

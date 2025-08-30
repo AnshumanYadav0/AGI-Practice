@@ -123,3 +123,25 @@ For true contextual understanding, the assistant needs to search by meaning, not
     *   These relevant chunks are provided to the assistant as context to generate a precise, informed answer.
 
 Implementing a RAG system is a significant step that would give Vedic a powerful, personalized memory, making it an incredibly useful knowledge management tool.
+
+## System Automation (Future Scope)
+
+### Autonomous Application Installation
+
+A key feature of a true system manager is the ability to install new software on behalf of the user. This is a powerful but high-risk capability that requires a careful, security-first approach.
+
+The ideal implementation would leverage modern package managers, as they provide a trusted and scriptable way to handle software installation.
+
+1.  **The Workflow:**
+    *   **User Command:** "Vedic, install the VLC media player."
+    *   **LLM Chooses Tool:** The AI 'brain' would choose a new high-level tool, for example, `install_windows_application`. The parameter would be `app_name="VLC media player"`.
+    *   **Search Step:** The `install_windows_application` tool would first use the `run_bash_command` tool to search for the application in the package manager's repository. For Windows, this would be `winget search "VLC media player"`.
+    *   **Parsing Step:** The tool would parse the output of the search command to find the exact Package ID (e.g., `VideoLAN.VLC`).
+    *   **Confirmation Step (Crucial):** Before proceeding, the tool would confirm with the user: "I found VLC media player with the ID 'VideoLAN.VLC'. Shall I proceed with the installation?"
+    *   **Execution Step:** Upon confirmation, the tool would use `run_bash_command` again to execute the installation command: `winget install -e --id VideoLAN.VLC`.
+
+2.  **Security and Reliability:**
+    *   Using a package manager like `winget` (for Windows) or `apt` (for Debian/Linux) is much safer than searching the web for a `.exe` file, which could lead to malware.
+    *   The confirmation step is essential to ensure the agent does not perform major system changes without the user's explicit consent.
+
+This feature would dramatically enhance the assistant's role as a system troubleshooter and manager.

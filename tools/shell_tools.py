@@ -31,8 +31,8 @@ class RunBashCommandTool:
             # The provided tool function is called here.
             result = self.run_in_bash_session_tool(command)
             self.logger("Command executed successfully.")
-            # It's good practice to return the output to the agent.
-            return f"Successfully executed command '{command}'.\nOutput:\n{result}"
+            # Return the RAW output from the command. The calling tool is responsible for interpreting it.
+            return result
         except Exception as e:
             error_message = f"An error occurred while executing the shell command: {e}"
             self.logger(error_message)

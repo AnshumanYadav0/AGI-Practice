@@ -1,3 +1,6 @@
 {
-  "notes_directory": "my_notes"
+  "indexed_directories": [
+    "my_notes",
+    "my_music"
+  ]
 }
