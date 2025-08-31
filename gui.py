@@ -1,17 +1,17 @@
 import tkinter as tk
 from tkinter import scrolledtext, Entry, Button, Frame
-from assistant import Assistant
 import speech_recognition as sr
 import threading
+from client import send_command # Import the client's send_command function
 
 class VedicApp(tk.Tk):
     """
-    A Tkinter GUI for the Vedic 2.0 Assistant with Voice Input.
+    A Tkinter GUI Client for the Vedic 5.0 Assistant Service.
     """
     def __init__(self):
         super().__init__()
 
-        self.title("Vedic 4.0 Assistant")
+        self.title("Vedic 5.0 Client")
         self.geometry("750x550")
 
         # --- Main Frame ---
@@ -36,10 +36,9 @@ class VedicApp(tk.Tk):
         self.send_button.pack(side='right', padx=2)
         self.speak_button.pack(side='right')
 
-        # --- Initialize Assistant ---
-        # The assistant will use its internal dummy tools since we are not passing any.
-        self.assistant = Assistant(logger=self.log_to_gui)
-        self.log_to_gui("Vedic 4.0 (Tool-Using Agent) initialized. Please enter a command or press 'Speak'.")
+        self.log_to_gui("Vedic 5.0 Client initialized.")
+        self.log_to_gui("NOTE: The main service must be running in a separate terminal (`py service.py`).")
+        self.log_to_gui("This window is for sending commands. Detailed logs will appear in the service terminal.")
 
     def log_to_gui(self, message):
         """Thread-safe method to append a message to the GUI's output box."""
@@ -54,18 +53,19 @@ class VedicApp(tk.Tk):
         self.send_command()
 
     def send_command(self):
-        """Gets command from input box and executes it in a new thread."""
+        """Gets command from input box and sends it to the service via the client logic."""
         command_text = self.input_box.get()
         if not command_text:
             return
+
+        self.log_to_gui(f"\n> Sending command: '{command_text}'")
+        send_command(command_text) # Use the imported client function
         self.input_box.delete(0, tk.END)
-        # Run assistant in a thread to avoid freezing the GUI
-        threading.Thread(target=self.assistant.execute_command, args=(command_text,)).start()
 
     def listen_for_command(self):
         """Listens for a voice command in a new thread."""
         self.speak_button.config(state='disabled', text="Listening...")
-        self.log_to_gui("\n[Voice] Listening for your command...")
+        self.log_to_gui("\n[Voice] Listening...")
         threading.Thread(target=self._recognize_speech).start()
 
     def _recognize_speech(self):
@@ -75,32 +75,22 @@ class VedicApp(tk.Tk):
             try:
                 recognizer.adjust_for_ambient_noise(source, duration=0.5)
                 audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
-                self.log_to_gui("[Voice] Recognizing speech...")
+                self.log_to_gui("[Voice] Recognizing...")
 
-                # Use Google Web Speech API
                 text = recognizer.recognize_google(audio)
-                self.log_to_gui(f"[Voice] You said: \"{text}\"")
+                self.log_to_gui(f"[Voice] Heard: \"{text}\"")
 
-                # Put recognized text in the input box and execute
+                # Place recognized text in the input box and send it
                 self.input_box.delete(0, tk.END)
                 self.input_box.insert(0, text)
                 self.send_command()
 
-            except sr.WaitTimeoutError:
-                self.log_to_gui("[Voice] Error: No speech detected. Please try again.")
-            except sr.UnknownValueError:
-                self.log_to_gui("[Voice] Error: Could not understand the audio. Please speak clearly.")
-            except sr.RequestError as e:
-                self.log_to_gui(f"[Voice] Error: Could not request results from Google Speech Recognition service; {e}")
             except Exception as e:
-                self.log_to_gui(f"[Voice] An unexpected error occurred: {e}")
+                self.log_to_gui(f"[Voice] Error: {e}")
             finally:
-                # Re-enable the speak button
                 self.speak_button.config(state='normal', text="Speak")
 
 
 if __name__ == "__main__":
-    print("GUI script created. To run, execute 'python gui.py' on a desktop system with a microphone.")
-    # The following lines are commented out to prevent crashing in the sandbox.
-    # app = VedicApp()
-    # app.mainloop()
+    app = VedicApp()
+    app.mainloop()

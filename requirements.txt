@@ -1,0 +1,10 @@
+# This file lists the required Python packages for the Vedic AI Assistant.
+# Install them using the command:
+# py -m pip install -r requirements.txt
+
+spacy
+selenium
+webdriver-manager
+SpeechRecognition
+PyAudio
+googletrans==4.0.0-rc1
